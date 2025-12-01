@@ -3,11 +3,30 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Panel web: http://localhost:15672
+      - "5672:5672"
+      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   python-ms:
     build:
@@ -15,11 +34,11 @@ services:
       dockerfile: Dockerfile
     container_name: python-ms
     environment:
-      # El MS de Python usa CLOUDAMQP_URL (pika.URLParameters)
       - CLOUDAMQP_URL=amqp://guest:guest@rabbitmq:5672/
       - ORDERS_QUEUE=orders.new
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8000:8000"
 
@@ -29,15 +48,20 @@ services:
       dockerfile: Dockerfile
     container_name: node-ms
     environment:
-      # Forzamos el uso de RabbitMQ local dentro del compose
       - AMQP_CONNECTION_TYPE=local
       - AMQP_LOCAL_HOST=rabbitmq
       - AMQP_LOCAL_PORT=5672
       - AMQP_LOCAL_USER=guest
       - AMQP_LOCAL_PASS=guest
       - AMQP_LOCAL_PROTOCOL=amqp
+      - USE_MONGO=true
+      - MONGO_URI=mongodb://mongo:27017/
+      - MONGO_DB=orders_db
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
     ports:
       - "3002:3002"
       - "4000:4000"
@@ -51,3 +75,6 @@ services:
       - node-ms
     ports:
       - "5173:5173"
+
+volumes:
+  mongo-data:
