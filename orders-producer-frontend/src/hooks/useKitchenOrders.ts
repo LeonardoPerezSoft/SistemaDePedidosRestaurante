@@ -162,6 +162,28 @@ export const useKitchenOrders = () => {
               });
             }
 
+            if (msg.type === 'ORDER_UPDATED' && msg.order) {
+              const updatedOrder = mapApiOrderToKitchenOrder(msg.order);
+              setOrders((prev: KitchenOrder[]) => {
+                const exists = prev.some((o: KitchenOrder) => o.fullId === updatedOrder.fullId);
+                if (exists) {
+                  // Update existing order while preserving status if it's more advanced
+                  return prev.map((o: KitchenOrder) => {
+                    if (o.fullId === updatedOrder.fullId) {
+                      const statusRank = { 'New Order': 0, 'Cooking': 1, 'Ready': 2, 'Completed': 3, 'Cancelled': 99 };
+                      const existingRank = statusRank[o.status] || 0;
+                      const updatedRank = statusRank[updatedOrder.status] || 0;
+                      // Keep existing status if more advanced, otherwise use updated
+                      return existingRank > updatedRank ? { ...updatedOrder, status: o.status } : updatedOrder;
+                    }
+                    return o;
+                  });
+                }
+                // If order doesn't exist, add it
+                return [updatedOrder, ...prev];
+              });
+            }
+
             if (msg.type === 'ORDER_READY' && msg.id) {
               setOrders((prev: KitchenOrder[]) =>
                 prev.map((o: KitchenOrder) =>
