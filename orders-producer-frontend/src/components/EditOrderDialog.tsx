@@ -117,11 +117,18 @@ export function EditOrderDialog({ order, open, onClose, onSave, availableProduct
   const handleSave = async () => {
     if (!order || items.length === 0) return;
 
+    // Validar que el nombre del cliente no esté vacío
+    const trimmedName = customerName.trim();
+    if (!trimmedName) {
+      setError('Customer name is required');
+      return;
+    }
+
     setError(null);
     setSaving(true);
     try {
       const success = await onSave(order.fullId, {
-        customerName: customerName.trim() || 'Cliente sin nombre',
+        customerName: trimmedName,
         table: table.trim(),
         items
       });
@@ -167,12 +174,13 @@ export function EditOrderDialog({ order, open, onClose, onSave, availableProduct
           {/* Customer Info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="customerName">Customer Name</Label>
+              <Label htmlFor="customerName">Customer Name <span className="text-red-500">*</span></Label>
               <Input
                 id="customerName"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Enter customer name"
+                placeholder="Enter customer name (required)"
+                required
               />
             </div>
             <div className="space-y-2">

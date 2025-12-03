@@ -63,7 +63,12 @@ export function WaiterPage() {
   const handleSend = async (table: string, clientName: string) => {
     if (order.items.length === 0) return;
 
-    const customerName = clientName?.trim() || "Cliente sin nombre";
+    const customerName = clientName?.trim();
+    
+    // Validar que el nombre del cliente no esté vacío
+    if (!customerName) {
+      return;
+    }
 
     const payload: OrderPayload = {
       customerName,

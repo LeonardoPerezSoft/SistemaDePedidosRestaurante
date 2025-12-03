@@ -55,15 +55,16 @@ export default function OrderSidebar({
         <div className="space-y-3">
           <div>
             <Label htmlFor="customer-name" className="text-sm font-medium text-gray-700">
-              Customer name
+              Customer name <span className="text-red-500">*</span>
             </Label>
             <Input
               id="customer-name"
               type="text"
-              placeholder="Enter customer name"
+              placeholder="Enter customer name (required)"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="mt-1"
+              required
             />
           </div>
 
@@ -200,7 +201,7 @@ export default function OrderSidebar({
 
         <Button
           onClick={handleSubmit}
-          disabled={order.items.length === 0 || (orderType === 'dine-in' && !selectedTable)}
+          disabled={order.items.length === 0 || (orderType === 'dine-in' && !selectedTable) || !customerName.trim()}
           className="w-full bg-blue-500 hover:bg-blue-600 h-12 text-base"
         >
           <Send className="w-5 h-5 mr-2" />

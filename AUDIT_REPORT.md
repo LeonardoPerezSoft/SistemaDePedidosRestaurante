@@ -15,6 +15,7 @@ El sistema presenta una **arquitectura de microservicios funcional y bien estruc
 - ✅ Principios SOLID aplicados correctamente  
 - ✅ Patrones de diseño implementados (Strategy, Repository, Singleton)  
 - ✅ Refactorización exitosa del frontend (App.tsx)  
+- ✅ Validación de negocio aplicada en Python y frontend (nombre requerido)  
 - ⚠️ Testing todavía limitado
 - ⚠️ Adapter Pattern pendiente en Python  
 
@@ -90,6 +91,25 @@ export const useOrderSubmission = () => {
 - `<KitchenPage />` - Vista de cocina
 - `<OrderSidebar />` - Carrito de pedidos
 - `<ProductCard />` - Tarjeta de producto
+
+---
+
+## 🧪 Cambios funcionales recientes
+
+### Validación de nombre de cliente (frontend + backend Python)
+
+- Frontend: se eliminó el valor por defecto "Cliente sin nombre" y se añadió validación para impedir el envío si `customerName` está vacío.
+  - `orders-producer-frontend/src/pages/WaiterPage.tsx`: `handleSend` retorna sin enviar cuando `clientName.trim()` está vacío.
+  - `orders-producer-frontend/src/components/OrderSidebar.tsx`: botón "Send to Kitchen" se deshabilita si `customerName.trim()` está vacío; campo con asterisco visual y `required`.
+  - `orders-producer-frontend/src/components/EditOrderDialog.tsx`: `handleSave` muestra error "Customer name is required" y no guarda si está vacío.
+
+- Backend Python (FastAPI): se añadió un `field_validator` en `OrderIn` que rechaza nombres vacíos o solo espacios y normaliza con `strip()`.
+  - `orders-producer-python/app/models/order.py`: `customer_name_must_not_be_empty` valida y normaliza `customerName`.
+
+- Impacto:
+  - Evita registros en base de datos con "Cliente sin nombre".
+  - Refuerza la regla de negocio desde el cliente y el servidor.
+  - Mejora la calidad de los datos y la experiencia de usuario.
 
 ---
 
@@ -804,6 +824,22 @@ class OrderItem(BaseModel):
     unitPrice: confloat(ge=0)     # ✓ No negativo
 ```
 
+Además, se agregó validación estricta para `customerName` en `OrderIn`:
+
+```python
+class OrderIn(BaseModel):
+  customerName: str
+  table: str
+  items: List[OrderItem]
+
+  @field_validator("customerName")
+  @classmethod
+  def customer_name_must_not_be_empty(cls, v: str) -> str:
+    if not v or not v.strip():
+      raise ValueError("customerName must not be empty")
+    return v.strip()
+```
+
 ### 3. **Separación Frontend/Backend**
 ✓ CORS configurado correctamente  
 ✓ APIs RESTful bien estructuradas  
@@ -812,6 +848,7 @@ class OrderItem(BaseModel):
 ### 4. **Uso de TypeScript**
 ✓ Interfaces definidas (`OrderMessage`, `OrderItem`)  
 ✓ Tipado en controladores Express  
+✓ Validación en componentes de UI para impedir envíos sin `customerName`  
 
 ---
 
@@ -848,6 +885,11 @@ class OrderItem(BaseModel):
 
 6. **✅ Adapter Pattern (Node.js)**
    - ✓ `RabbitMQAdapter` con interface `MessageBroker`
+
+7. **✅ Validación de negocio: nombre de cliente requerido**
+  - ✓ Frontend impide envío sin nombre (`WaiterPage`, `OrderSidebar`, `EditOrderDialog`)
+  - ✓ Backend Python rechaza `customerName` vacío (`OrderIn` validator)
+  - ✓ Eliminado fallback "Cliente sin nombre"
 
 #
 
