@@ -64,3 +64,37 @@ def test_update_order_preparing(order_service, sample_order_in):
 def test_update_order_not_found(order_service, sample_order_in):
     with pytest.raises(ValueError):
         order_service.update_order("no-existe", sample_order_in)
+
+def test_create_order_with_empty_customer_name(order_service):
+    """Test que valida que no se puede crear una orden con nombre vacío"""
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError) as exc_info:
+        OrderIn(
+            customerName="",
+            table="Mesa 1",
+            items=[OrderItem(productName="Hamburguesa", quantity=1, unitPrice=10000)]
+        )
+    assert "customerName must not be empty" in str(exc_info.value)
+
+def test_create_order_with_whitespace_customer_name(order_service):
+    """Test que valida que no se puede crear una orden con nombre solo de espacios"""
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError) as exc_info:
+        OrderIn(
+            customerName="   ",
+            table="Mesa 1",
+            items=[OrderItem(productName="Hamburguesa", quantity=1, unitPrice=10000)]
+        )
+    assert "customerName must not be empty" in str(exc_info.value)
+
+def test_create_order_with_valid_customer_name_with_spaces(order_service):
+    """Test que valida que se pueden crear órdenes con nombres que tienen espacios al inicio/final"""
+    order_in = OrderIn(
+        customerName="  Juan Pérez  ",
+        table="Mesa 1",
+        items=[OrderItem(productName="Hamburguesa", quantity=1, unitPrice=10000)]
+    )
+    # Debe recortar los espacios automáticamente
+    assert order_in.customerName == "Juan Pérez"
+    order = order_service.create_order(order_in)
+    assert order.customerName == "Juan Pérez"

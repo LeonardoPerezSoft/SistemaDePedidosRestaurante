@@ -15,6 +15,13 @@ class OrderIn(BaseModel):
     table: str
     items: List[OrderItem]
 
+    @field_validator("customerName")
+    @classmethod
+    def customer_name_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("customerName must not be empty")
+        return v.strip()
+
     @field_validator("items")
     @classmethod
     def items_must_not_be_empty(cls, v: List[OrderItem]) -> List[OrderItem]:
