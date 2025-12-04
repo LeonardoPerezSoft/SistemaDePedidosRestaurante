@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import OrderSidebar from '../components/OrderSidebar';
 import { EditOrderDialog } from '../components/EditOrderDialog';
+import { ViewOrderDialog } from '@/components/ViewOrderDialog';
 import { useOrderManagement } from '../hooks/useOrderManagement';
 import { useOrderSubmission } from '../hooks/useOrderSubmission';
 import { useActiveOrders } from '../hooks/useActiveOrders';
@@ -10,7 +11,7 @@ import { updateOrder } from '../services/orderService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Clock, RefreshCw, Pencil } from 'lucide-react';
+import { Clock, Pencil, Eye } from 'lucide-react';
 import type { Product, OrderPayload } from '../types/order';
 
 const initialProducts: Product[] = [
@@ -42,10 +43,12 @@ const STATUS_CONFIG = {
 export function WaiterPage() {
   const [products] = useState<Product[]>(initialProducts);
   const [orderStatus, setOrderStatus] = useState<OrderStatusFilter>('all');
-  const [menuCategory, setMenuCategory] = useState<MenuCategory>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [editingOrder, setEditingOrder] = useState<ActiveOrder | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<ActiveOrder | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
   
   const { order, addToOrder, changeQty, addNoteToItem, total, clearOrder } = useOrderManagement();
   const { submitOrder, successMsg } = useOrderSubmission();
@@ -97,9 +100,19 @@ export function WaiterPage() {
     setIsEditDialogOpen(true);
   };
 
+  const handleViewOrder = (order: ActiveOrder) => {
+    setViewingOrder(order);
+    setIsViewDialogOpen(true);
+  };
+
   const handleCloseEditDialog = () => {
     setIsEditDialogOpen(false);
     setTimeout(() => setEditingOrder(null), 200);
+  };
+
+  const handleCloseViewDialog = () => {
+    setIsViewDialogOpen(false);
+    setTimeout(() => setViewingOrder(null), 200);
   };
 
   const handleSaveOrder = async (
@@ -195,7 +208,7 @@ export function WaiterPage() {
                         <span className="font-medium">{order.itemCount}</span>
                         <span className="text-gray-400">items</span>
                       </div>
-                      {isEditable && (
+                      {isEditable ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -204,6 +217,16 @@ export function WaiterPage() {
                           title="Edit order"
                         >
                           <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewOrder(order)}
+                          className="h-7 w-7 p-0 cursor-pointer"
+                          title="View order details"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>
@@ -256,6 +279,14 @@ export function WaiterPage() {
         onSave={handleSaveOrder}
         availableProducts={products}
       />
+
+      {/* View Order Dialog */}
+      <ViewOrderDialog
+        order={viewingOrder}
+        open={isViewDialogOpen}
+        onClose={handleCloseViewDialog}
+      />
     </div>
+    
   );
 }
