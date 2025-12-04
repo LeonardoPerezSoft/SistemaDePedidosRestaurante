@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getKitchenOrders } from '../services/orderService';
 import type { ApiOrder } from '../types/order';
+import { useWebSocket } from './useWebSocket';
 
 export type ActiveOrderStatus = 'pending' | 'preparing' | 'ready' | 'completed';
 
@@ -71,6 +72,9 @@ export const useActiveOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Connect to WebSocket
+  const { lastMessage, isConnected } = useWebSocket();
+
   const fetchActiveOrders = useCallback(async () => {
     try {
       setLoading(true);
@@ -116,6 +120,22 @@ export const useActiveOrders = () => {
 
   // Update time remaining every 30 seconds
   useEffect(() => {
+    if (lastMessage) {
+      console.log('📨 WebSocket message received:', lastMessage);
+      
+      // Refetch orders when receiving updates
+      // Adjust the condition based on your message structure
+      if (lastMessage.type === 'ORDER_CREATED' || 
+          lastMessage.type === 'ORDER_UPDATED' ||
+          lastMessage.event === 'order.updated' ||
+          lastMessage.event === 'order.created') {
+        fetchActiveOrders();
+      }
+    }
+  }, [lastMessage, fetchActiveOrders]);
+
+  // Update time remaining every 30 seconds
+  useEffect(() => {
     const interval = setInterval(() => {
       setActiveOrders(prevOrders => 
         prevOrders.map(order => ({
@@ -123,24 +143,16 @@ export const useActiveOrders = () => {
           timeRemaining: calculateTimeElapsed(order.createdAt),
         }))
       );
-    }, 30000); // Update every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
-
-  // Poll for new orders every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchActiveOrders();
-    }, 10000); // Poll every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [fetchActiveOrders]);
 
   return {
     activeOrders,
     loading,
     error,
     refetch: fetchActiveOrders,
+    isConnected, // Expose connection status
   };
 };

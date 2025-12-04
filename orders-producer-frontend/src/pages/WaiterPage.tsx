@@ -141,15 +141,6 @@ export function WaiterPage() {
           <div className="flex items-center gap-6 mb-3">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-gray-800">Track Order</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={refetchOrders}
-                disabled={ordersLoading}
-                className="h-8 w-8 p-0"
-              >
-                <RefreshCw className={`h-4 w-4 ${ordersLoading ? 'animate-spin' : ''}`} />
-              </Button>
             </div>
             
             <div className="flex gap-2">
