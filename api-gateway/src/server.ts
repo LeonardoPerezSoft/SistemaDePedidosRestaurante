@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno ANTES de cualquier otra cosa
+dotenv.config();
+
 import { createApp } from './app';
 import { env } from './config/environment';
 

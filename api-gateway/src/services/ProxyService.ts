@@ -35,7 +35,28 @@ export abstract class ProxyService implements IProxyService {
       },
     };
 
-    return retryWithBackoff(() => this.axiosInstance.request(requestConfig));
+    console.log(`📤 Proxy request [${this.serviceName}]:`, { 
+      path, 
+      method: method.toUpperCase(),
+      url: `${this.baseURL}${path}`,
+      hasAuth: !!headers?.authorization 
+    });
+
+    try {
+      const response = await retryWithBackoff(() => this.axiosInstance.request(requestConfig));
+      console.log(`✅ Proxy response [${this.serviceName}]:`, { 
+        status: response.status,
+        statusText: response.statusText
+      });
+      return response;
+    } catch (error: any) {
+      console.error(`❌ Proxy error [${this.serviceName}]:`, {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
   }
 
   getServiceName(): string {

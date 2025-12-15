@@ -75,9 +75,11 @@ services:
       - PORT=3000
       - PYTHON_MS_URL=http://python-ms:8000
       - NODE_MS_URL=http://node-ms:3002
+      - ADMIN_MS_URL=http://admin-service:4001
       - REQUEST_TIMEOUT=30000
       - RETRY_ATTEMPTS=3
       - CORS_ORIGIN=http://localhost:5173
+      - JWT_SECRET=change-me-in-prod
     depends_on:
       - python-ms
       - node-ms
@@ -91,8 +93,26 @@ services:
     depends_on:
       - python-ms
       - node-ms
+      - admin-service
     ports:
       - "5173:5173"
+
+  admin-service:
+    build:
+      context: ./admin-service
+      dockerfile: Dockerfile
+    container_name: admin-service
+    environment:
+      - PORT=4001
+      - MONGO_URI=mongodb://mongo:27017/
+      - MONGO_DB=orders_db
+      - JWT_SECRET=change-me-in-prod
+      - CORS_ORIGIN=http://localhost:5173
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "4001:4001"
 
 volumes:
   mongo-data:

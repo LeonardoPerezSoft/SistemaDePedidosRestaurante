@@ -1,10 +1,13 @@
 // src/infrastructure/http/server.ts
 import express from "express";
+import cors from "cors";
+
 import { setOrderRepository, getKitchenOrders, updateOrderStatus, updateOrder } from "./controllers/kitchen.controller";
 import { MongoOrderRepository } from "../database/repositories/mongo.order.repository";
 import mongoSingleton from "../database/mongo";
 import { startWorker } from "../messaging/worker";
 import "../websocket/ws-server"; // Inicia WebSocket server
+import { categoryRouter } from "./routes/category.routes";
 
 export async function startServer() {
   try {
@@ -24,11 +27,16 @@ export async function startServer() {
     // 4. Crear servidor HTTP
     const app = express();
     app.use(express.json());
+    app.use(cors({ origin: "http://localhost:5173" }));
+
 
     // Rutas
     app.get("/kitchen/orders", getKitchenOrders);
     app.put("/kitchen/orders/:id", updateOrder);
     app.patch("/kitchen/orders/:id", updateOrderStatus);
+
+    // Rutas de categorías
+    app.use("/categories", categoryRouter);
 
     const PORT = process.env.PORT || 3002;
     app.listen(PORT, () => {

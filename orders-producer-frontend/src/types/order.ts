@@ -4,6 +4,7 @@ export interface Product {
   price: number;
   desc: string;
   image: string;
+  category?: string;
 }
 
 export interface OrderItem {

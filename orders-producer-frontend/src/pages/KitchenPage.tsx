@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { useAuth } from '../store/auth';
+import { Navigate } from 'react-router-dom';
 import { KitchenHeader } from '../components/KitchenHeader';
 import { KitchenTabs, type TabType } from '../components/KitchenTabs';
 import { KitchenOrderCard } from '../components/KitchenOrderCard';
 import { useKitchenOrders } from '../hooks/useKitchenOrders';
 
 export function KitchenPage() {
+  const { token } = useAuth();
+  if (!token) return <Navigate to="/session" replace />;
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const { orders, loading, startCooking, markAsReady, completeOrder } = useKitchenOrders();
 

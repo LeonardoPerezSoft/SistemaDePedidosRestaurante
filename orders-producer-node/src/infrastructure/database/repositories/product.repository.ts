@@ -75,6 +75,8 @@ export class ProductRepository {
    * Crea o actualiza un producto
    */
   async upsert(product: Product): Promise<void> {
+      console.log('🟢 [ProductRepository.upsert] Producto recibido:', JSON.stringify(product, null, 2));
+      console.log('🟢 [ProductRepository.upsert] preparationTime:', product.preparationTime, 'category:', product.category);
     try {
       const col = await this.collection();
       const query = product.id ? { id: product.id } : { name: product.name };
@@ -83,7 +85,13 @@ export class ProductRepository {
         query,
         {
           $set: {
-            ...product,
+            name: product.name,
+            price: product.price,
+            description: product.description,
+            image: product.image,
+            enabled: product.enabled,
+            preparationTime: product.preparationTime,
+            category: product.category,
             updatedAt: new Date(),
           },
           $setOnInsert: {

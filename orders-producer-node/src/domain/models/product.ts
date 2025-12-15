@@ -5,11 +5,13 @@
 export interface Product {
   _id: string;
   id?: number;
-  name: string; 
-  price: number; 
-  description: string; 
+  name: string;
+  price: number;
+  description: string;
   image: string;
-  enabled: boolean; 
+  enabled: boolean;
+  preparationTime: number; // en minutos
+  category: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

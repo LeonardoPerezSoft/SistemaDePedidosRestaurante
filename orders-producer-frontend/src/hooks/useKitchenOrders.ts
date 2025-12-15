@@ -38,18 +38,25 @@ const mapApiStatusToOrderStatus = (status?: string): OrderStatus => {
   }
 };
 
-// Format time from ISO string to local time
+// Format time from ISO string to local time (Colombia timezone)
 const formatTime = (isoString: string): string => {
   try {
-    const date = new Date(isoString);
-    // Use default locale to get local time zone
-    return date.toLocaleTimeString(undefined, { 
+    // Parse the ISO string (handle microseconds that JavaScript may not handle well)
+    // The backend is sending UTC times
+    const cleanedIso = isoString.substring(0, 19); // Keep only up to seconds: YYYY-MM-DDTHH:mm:ss
+    const date = new Date(cleanedIso + 'Z'); // Add Z to indicate UTC
+    
+    // Use toLocaleTimeString with America/Bogota timezone to convert UTC to Colombia time
+    const formatted = date.toLocaleTimeString('es-CO', { 
       hour: 'numeric', 
       minute: '2-digit',
       hour12: true,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timeZone: 'America/Bogota'
     });
-  } catch {
+    console.log(`⏰ UTC: ${cleanedIso}Z -> Colombia: ${formatted}`);
+    return formatted;
+  } catch (e) {
+    console.error(`❌ Error formatting time: ${isoString}`, e);
     return 'N/A';
   }
 };

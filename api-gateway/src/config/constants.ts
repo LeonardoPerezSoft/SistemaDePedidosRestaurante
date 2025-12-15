@@ -11,6 +11,7 @@ export const HTTP_STATUS = {
 export const SERVICES = {
   PYTHON_MS: 'python-ms',
   NODE_MS: 'node-ms',
+  ADMIN_MS: 'admin-service',
 } as const;
 
 // Rutas base del API Gateway

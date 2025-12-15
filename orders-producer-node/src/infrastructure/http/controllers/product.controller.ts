@@ -1,3 +1,34 @@
+/**
+ * POST /api/products
+ * Crea o actualiza un producto (incluye preparationTime)
+ */
+export async function upsertProduct(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = req.body;
+    // Validar campos mínimos
+    if (!data.name || typeof data.price !== 'number' || typeof data.preparationTime !== 'number') {
+      return res.status(400).json({ error: 'Faltan campos obligatorios: name, price, preparationTime' });
+    }
+    // Construir objeto Product
+    const product: Product = {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      description: data.description || '',
+      image: data.image || '',
+      enabled: typeof data.enabled === 'boolean' ? data.enabled : true,
+      preparationTime: data.preparationTime,
+      category: data.category || '',
+      createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+      updatedAt: new Date(),
+      _id: data._id || undefined
+    };
+    await repo.upsert(product);
+    return res.status(200).json({ success: true, product });
+  } catch (err) {
+    return next(err);
+  }
+}
 // src/infrastructure/http/controllers/product.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { ProductRepository } from "../../database/repositories/product.repository";
