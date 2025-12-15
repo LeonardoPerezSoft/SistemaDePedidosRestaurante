@@ -1,7 +1,7 @@
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
-export type TabType = 'All' | 'New' | 'Cooking' | 'Ready' | 'Completed' | 'Cancelled';
+export type TabType = 'All' | 'Nueva Orden' | 'Preparando' | 'Listo' | 'Finalizada' | 'Cancelada';
 
 interface KitchenTabsProps {
   activeTab: TabType;
@@ -9,7 +9,7 @@ interface KitchenTabsProps {
   onTabChange: (tab: TabType) => void;
 }
 
-const tabs: TabType[] = ['All', 'New', 'Cooking', 'Ready', 'Completed', 'Cancelled'];
+const tabs: TabType[] = ['All', 'Nueva Orden', 'Preparando', 'Listo', 'Finalizada', 'Cancelada'];
 
 export function KitchenTabs({ activeTab, counts, onTabChange }: KitchenTabsProps) {
   return (

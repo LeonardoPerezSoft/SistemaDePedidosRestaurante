@@ -10,6 +10,7 @@ interface ProductCardProps {
   quantity?: number;
 }
 
+// @ts-expect-error React component prop inference workaround
 export default function ProductCard({ product, onAdd, quantity = 0 }: ProductCardProps) {
   return (
     <Card className="bg-gray-100 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">

@@ -5,6 +5,7 @@ interface AuthState {
   user: { id: string; name: string; email: string; roles: string[] } | null;
   setAuth: (token: string, user: AuthState['user']) => void;
   clear: () => void;
+  logout: () => void;
 }
 
 // Cargar datos desde localStorage al iniciar
@@ -32,6 +33,12 @@ export const useAuth = create<AuthState>((set) => ({
   },
   clear: () => {
     console.log('🚪 Clearing auth');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    set({ token: null, user: null });
+  },
+  logout: () => {
+    console.log('🚪 Logout');
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     set({ token: null, user: null });

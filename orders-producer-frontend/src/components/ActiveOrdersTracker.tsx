@@ -6,18 +6,18 @@ import type { ActiveOrder } from '../hooks/useActiveOrders';
 type OrderStatusFilter = 'all' | 'pending' | 'preparing' | 'ready' | 'completed';
 
 const ORDER_STATUS_FILTERS: { value: OrderStatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'preparing', label: 'Preparing' },
-  { value: 'ready', label: 'Ready' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'all', label: 'Todas' },
+  { value: 'pending', label: 'Pendientes' },
+  { value: 'preparing', label: 'Preparando' },
+  { value: 'ready', label: 'Listas' },
+  { value: 'completed', label: 'Completadas' },
 ];
 
 const STATUS_CONFIG = {
-  ready: { color: 'bg-green-500 hover:bg-green-600', text: 'Ready' },
-  preparing: { color: 'bg-blue-500 hover:bg-blue-600', text: 'Preparing' },
-  pending: { color: 'bg-orange-500 hover:bg-orange-600', text: 'Pending' },
-  completed: { color: 'bg-gray-500 hover:bg-gray-600', text: 'Completed' },
+  ready: { color: 'bg-green-500 hover:bg-green-600', text: 'Lista' },
+  preparing: { color: 'bg-blue-500 hover:bg-blue-600', text: 'Preparando' },
+  pending: { color: 'bg-orange-500 hover:bg-orange-600', text: 'Pendiente' },
+  completed: { color: 'bg-gray-500 hover:bg-gray-600', text: 'Completada' },
 } as const;
 
 interface ActiveOrdersTrackerProps {
@@ -41,7 +41,7 @@ export function ActiveOrdersTracker({
     <div className="bg-white border-b px-6 py-3 pt-9">
       <div className="flex items-center gap-6 mb-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-800">Track Order</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Seguimiento de Pedidos</h2>
         </div>
         
         <div className="flex gap-2">
@@ -61,9 +61,9 @@ export function ActiveOrdersTracker({
 
       <div className="flex gap-3 overflow-x-auto pb-2">
         {ordersLoading && activeOrders.length === 0 ? (
-          <div className="text-sm text-gray-500 py-2">Loading orders...</div>
+          <div className="text-sm text-gray-500 py-2">Cargando pedidos...</div>
         ) : activeOrders.length === 0 ? (
-          <div className="text-sm text-gray-500 py-2">No active orders</div>
+          <div className="text-sm text-gray-500 py-2">No hay pedidos activos</div>
         ) : (
           activeOrders
             .filter(order => orderStatus === 'all' || order.status === orderStatus)
@@ -93,7 +93,7 @@ export function ActiveOrdersTracker({
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-600">
                       <span className="font-medium">{order.itemCount}</span>
-                      <span className="text-gray-400">items</span>
+                      <span className="text-gray-400">artículos</span>
                     </div>
                     {isEditable ? (
                       <Button

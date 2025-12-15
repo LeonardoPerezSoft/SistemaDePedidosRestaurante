@@ -1,31 +1,37 @@
 import { useState } from 'react';
 import { useAuth } from '../store/auth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { KitchenHeader } from '../components/KitchenHeader';
 import { KitchenTabs, type TabType } from '../components/KitchenTabs';
 import { KitchenOrderCard } from '../components/KitchenOrderCard';
 import { useKitchenOrders } from '../hooks/useKitchenOrders';
 
 export function KitchenPage() {
-  const { token } = useAuth();
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
   if (!token) return <Navigate to="/session" replace />;
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const { orders, loading, startCooking, markAsReady, completeOrder } = useKitchenOrders();
 
+  const handleLogout = () => {
+    logout();
+    navigate('/session');
+  };
+
   // Calculate counts for each tab
   const tabCounts: Record<TabType, number> = {
     All: orders.length,
-    New: orders.filter(o => o.status === 'New Order').length,
-    Cooking: orders.filter(o => o.status === 'Cooking').length,
-    Ready: orders.filter(o => o.status === 'Ready').length,
-    Completed: orders.filter(o => o.status === 'Completed').length,
-    Cancelled: orders.filter(o => o.status === 'Cancelled').length,
+    'Nueva Orden': orders.filter(o => o.status === 'Nueva Orden').length,
+    'Preparando': orders.filter(o => o.status === 'Preparando').length,
+    'Listo': orders.filter(o => o.status === 'Listo').length,
+    'Finalizada': orders.filter(o => o.status === 'Finalizada').length,
+    'Cancelada': orders.filter(o => o.status === 'Cancelada').length,
   };
 
   // Filter orders based on active tab
   const filteredOrders = activeTab === 'All' 
     ? orders 
-    : orders.filter(order => order.status === activeTab || (activeTab === 'New' && order.status === 'New Order'));
+    : orders.filter(order => order.status === activeTab || (activeTab === 'Nueva Orden' && order.status === 'Nueva Orden'));
 
   const handleStartCooking = (orderId: string) => {
     startCooking(orderId);
@@ -41,11 +47,14 @@ export function KitchenPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <KitchenHeader />
+      <KitchenHeader 
+        userEmail={user?.email}
+        onLogout={handleLogout}
+      />
       
       <div className="mb-6">
         <h2 className="max-w-[1600px] mx-auto px-6 pt-6 pb-3 text-lg font-semibold text-gray-900">
-          Order List
+          Lista De Ordenes
         </h2>
         <KitchenTabs 
           activeTab={activeTab} 

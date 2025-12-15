@@ -46,7 +46,7 @@ export default function OrderSidebar({
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b p-6">
-        <h2 className="text-xl font-semibold text-gray-800">Current Order</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Pedido Actual</h2>
       </div>
 
       {/* Order Details */}
@@ -55,12 +55,12 @@ export default function OrderSidebar({
         <div className="space-y-3">
           <div>
             <Label htmlFor="customer-name" className="text-sm font-medium text-gray-700">
-              Customer name <span className="text-red-500">*</span>
+              Nombre del cliente <span className="text-red-500">*</span>
             </Label>
             <Input
               id="customer-name"
               type="text"
-              placeholder="Enter customer name (required)"
+              placeholder="Ingrese el nombre del cliente (requerido)"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="mt-1"
@@ -70,7 +70,7 @@ export default function OrderSidebar({
 
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Order Type
+              Tipo de Pedido
             </Label>
             <div className="flex gap-2">
               <Button
@@ -78,14 +78,14 @@ export default function OrderSidebar({
                 onClick={() => setOrderType('dine-in')}
                 className="flex-1 rounded-full"
               >
-                Dine-in
+                En el Local
               </Button>
               <Button
                 variant={orderType === 'takeaway' ? 'default' : 'outline'}
                 onClick={() => setOrderType('takeaway')}
                 className="flex-1 rounded-full"
               >
-                Takeaway
+                Para Llevar
               </Button>
             </div>
           </div>
@@ -93,16 +93,16 @@ export default function OrderSidebar({
           {orderType === 'dine-in' && (
             <div>
               <Label htmlFor="table-select" className="text-sm font-medium text-gray-700">
-                Select table
+                Seleccione mesa
               </Label>
               <Select value={selectedTable} onValueChange={setSelectedTable}>
                 <SelectTrigger id="table-select" className="mt-1">
-                  <SelectValue placeholder="Select table" />
+                  <SelectValue placeholder="Seleccione mesa" />
                 </SelectTrigger>
                 <SelectContent>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                    <SelectItem key={num} value={`Table ${num}`}>
-                      Table {num}
+                    <SelectItem key={num} value={`Mesa ${num}`}>
+                      Mesa {num}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -114,7 +114,7 @@ export default function OrderSidebar({
         {/* Order Items */}
         {order.items.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-sm">No items added yet</p>
+            <p className="text-gray-400 text-sm">Aún no hay artículos agregados</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -160,7 +160,7 @@ export default function OrderSidebar({
                   </div>
 
                   <Textarea
-                    placeholder="Add note..."
+                    placeholder="Agregar nota..."
                     value={item.note || ''}
                     onChange={(e) => onAddNote(item.id, e.target.value)}
                     className="resize-none text-sm"
@@ -190,7 +190,7 @@ export default function OrderSidebar({
             <span>{formatCOP(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Tax (10%)</span>
+            <span>Impuesto (10%)</span>
             <span>{formatCOP(tax)}</span>
           </div>
           <div className="flex justify-between text-lg font-semibold text-gray-900 pt-2 border-t">
@@ -205,7 +205,7 @@ export default function OrderSidebar({
           className="w-full bg-blue-500 hover:bg-blue-600 h-12 text-base"
         >
           <Send className="w-5 h-5 mr-2" />
-          Send to Kitchen
+          Enviar a Cocina
         </Button>
       </div>
     </div>

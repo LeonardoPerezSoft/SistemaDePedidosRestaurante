@@ -17,24 +17,27 @@ export interface KitchenOrder {
     name: string;
     quantity: number;
     price: number;
+    preparationTime?: number; // in minutes
   }[];
   total: number;
   status: OrderStatus;
+  estimatedPrepTime?: number; // Total prep time in minutes
+  prepStartTime?: number; // Timestamp when cooking started
 }
 
 // Map API status to KitchenOrderCard status
 const mapApiStatusToOrderStatus = (status?: string): OrderStatus => {
   switch (status) {
     case 'preparing':
-      return 'Cooking';
+      return 'Preparando';
     case 'ready':
-      return 'Ready';
+      return 'Listo';
     case 'completed':
-      return 'Completed';
+      return 'Finalizada';
     case 'cancelled':
-      return 'Cancelled';
+      return 'Cancelada';
     default:
-      return 'New Order';
+      return 'Nueva Orden';
   }
 };
 
@@ -61,15 +64,37 @@ const formatTime = (isoString: string): string => {
   }
 };
 
+// Calculate total preparation time based on products
+// Formula: base_time = max(product_times), penalty = (quantity - 1) * factor, total = base + penalty
+const calculatePrepTime = (products: { preparationTime?: number; quantity: number }[]): number => {
+  if (!products || products.length === 0) return 5; // Default 5 minutes
+  
+  const baseTimes = products
+    .map(p => (p.preparationTime || 5) * (p.quantity || 1))
+    .sort((a, b) => b - a);
+  
+  const maxTime = baseTimes[0];
+  const penalty = (products.length - 1) * 1; // 1 minute per extra product
+  
+  return Math.ceil(maxTime + penalty);
+};
+
 // Map API Order to KitchenOrder format
 const mapApiOrderToKitchenOrder = (order: ApiOrder): KitchenOrder => {
-  const products = (order.items || []).map((item) => ({
-    name: item.productName,
-    quantity: item.quantity,
-    price: item.unitPrice,
-  }));
+  const products = (order.items || []).map((item: any) => {
+    const seconds = item.preparationTimeSeconds;
+    const minutesFromSeconds = typeof seconds === 'number' ? Math.ceil(seconds / 60) : undefined;
+    return {
+      name: item.productName,
+      quantity: item.quantity,
+      price: item.unitPrice,
+      // prefer explicit minutes if ever provided; else convert seconds; else default 5
+      preparationTime: item.preparationTime ?? minutesFromSeconds ?? 5,
+    };
+  });
 
   const total = products.reduce((acc, p) => acc + (p.price * p.quantity), 0);
+  const estimatedPrepTime = calculatePrepTime(products);
 
   return {
     id: `#${order.id.slice(0, 3).toUpperCase()}`,
@@ -81,6 +106,7 @@ const mapApiOrderToKitchenOrder = (order: ApiOrder): KitchenOrder => {
     products,
     total,
     status: mapApiStatusToOrderStatus(order.status),
+    estimatedPrepTime,
   };
 };
 
@@ -106,7 +132,7 @@ export const useKitchenOrders = () => {
             return incoming;
           }
           
-          const statusRank = { 'New Order': 0, 'Cooking': 1, 'Ready': 2, 'Completed': 3, 'Cancelled': 99 };
+          const statusRank = { 'Nueva Orden': 0, 'Preparando': 1, 'Listo': 2, 'Finalizada': 3, 'Cancelada': 99 };
           const byId = new Map<string, KitchenOrder>();
           
           // Start with incoming orders (latest from API)
@@ -177,7 +203,7 @@ export const useKitchenOrders = () => {
                   // Update existing order while preserving status if it's more advanced
                   return prev.map((o: KitchenOrder) => {
                     if (o.fullId === updatedOrder.fullId) {
-                      const statusRank = { 'New Order': 0, 'Cooking': 1, 'Ready': 2, 'Completed': 3, 'Cancelled': 99 };
+                      const statusRank = { 'Nueva Orden': 0, 'Preparando': 1, 'Listo': 2, 'Finalizada': 3, 'Cancelada': 99 };
                       const existingRank = statusRank[o.status] || 0;
                       const updatedRank = statusRank[updatedOrder.status] || 0;
                       // Keep existing status if more advanced, otherwise use updated
@@ -195,7 +221,7 @@ export const useKitchenOrders = () => {
               setOrders((prev: KitchenOrder[]) =>
                 prev.map((o: KitchenOrder) =>
                   o.id.includes(msg.id.slice(0, 3).toUpperCase())
-                    ? { ...o, status: 'Ready' as OrderStatus }
+                    ? { ...o, status: 'Listo' as OrderStatus }
                     : o
                 )
               );
@@ -209,6 +235,24 @@ export const useKitchenOrders = () => {
                     ? { ...o, status: newStatus }
                     : o
                 )
+              );
+            }
+
+            // Handler para ORDER_STATUS_CHANGED (enviado por el backend)
+            if (msg.type === 'ORDER_STATUS_CHANGED' && msg.order) {
+              const orderId = msg.order.id;
+              const newStatus = mapApiStatusToOrderStatus(msg.order.status);
+              console.log(`🔄 Estado de orden ${orderId} cambió a: ${msg.order.status} → ${newStatus}`);
+              
+              setOrders((prev: KitchenOrder[]) =>
+                prev.map((o: KitchenOrder) => {
+                  // Comparar por fullId (ID completo)
+                  if (o.fullId === orderId) {
+                    console.log(`✅ Actualizando orden ${o.id} de ${o.status} a ${newStatus}`);
+                    return { ...o, status: newStatus };
+                  }
+                  return o;
+                })
               );
             }
           } catch (err) {
@@ -269,13 +313,17 @@ export const useKitchenOrders = () => {
     try {
       // Update status on backend via API using full ID
       await updateOrderStatusAPI(order.fullId, 'preparing');
-      // Update local state
-      updateOrderStatus(orderId, 'Cooking');
+      // Update local state and register prep start time
+      setOrders((prev: KitchenOrder[]) =>
+        prev.map((o: KitchenOrder) =>
+          o.id === orderId ? { ...o, status: 'Preparando', prepStartTime: Date.now() } : o
+        )
+      );
     } catch (error) {
       console.error('Error updating order status:', error);
       // Optionally show error to user
     }
-  }, [orders, updateOrderStatus]);
+  }, [orders]);
 
   // Handler for marking as ready
   const markAsReady = useCallback(async (orderId: string) => {
@@ -290,7 +338,7 @@ export const useKitchenOrders = () => {
       // Update status on backend via API using full ID
       await updateOrderStatusAPI(order.fullId, 'ready');
       // Update local state
-      updateOrderStatus(orderId, 'Ready');
+      updateOrderStatus(orderId, 'Listo');
     } catch (error) {
       console.error('Error updating order status:', error);
       // Optionally show error to user
@@ -310,7 +358,7 @@ export const useKitchenOrders = () => {
       // Update status on backend via API using full ID
       await updateOrderStatusAPI(order.fullId, 'completed');
       // Update local state
-      updateOrderStatus(orderId, 'Completed');
+      updateOrderStatus(orderId, 'Finalizada');
     } catch (error) {
       console.error('Error updating order status:', error);
       // Optionally show error to user

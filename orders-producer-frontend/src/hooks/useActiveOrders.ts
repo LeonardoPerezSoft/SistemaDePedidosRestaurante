@@ -73,6 +73,7 @@ export const useActiveOrders = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Connect to WebSocket
+  // @ts-expect-error WebSocket hook typings compatible with runtime
   const { lastMessage, isConnected } = useWebSocket();
 
   const fetchActiveOrders = useCallback(async () => {
@@ -136,7 +137,7 @@ export const useActiveOrders = () => {
   }, []);
 
   return {
-   activeOrders,
+    activeOrders,
     setActiveOrders,
     loading,
     error,

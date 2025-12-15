@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../store/auth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import OrderSidebar from '../components/OrderSidebar';
 import { EditOrderDialog } from '../components/EditOrderDialog';
 import { ViewOrderDialog } from '@/components/ViewOrderDialog';
 import { ActiveOrdersTracker } from '@/components/ActiveOrdersTracker';
+import { WaiterHeader } from '../components/WaiterHeader';
+import { OrderReadyNotification } from '../components/OrderReadyNotification';
 import { useOrderManagement } from '../hooks/useOrderManagement';
 import { useOrderSubmission } from '../hooks/useOrderSubmission';
 import { useActiveOrders } from '../hooks/useActiveOrders';
 import type { ActiveOrder } from '../hooks/useActiveOrders';
-import { updateOrder } from '../services/orderService';
+import { updateOrder, updateOrderStatus } from '../services/orderService';
 import type { Product, OrderPayload } from '../types/order';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { fetchActiveProducts } from '../services/adminService';
@@ -24,7 +26,8 @@ interface Category {
 }
 
 export function WaiterPage() {
-  const { token } = useAuth();
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -36,6 +39,14 @@ export function WaiterPage() {
   const [viewingOrder, setViewingOrder] = useState<ActiveOrder | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [readyOrder, setReadyOrder] = useState<ActiveOrder | null>(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [snoozedOrders, setSnoozedOrders] = useState<Set<string>>(new Set());
+
+  const handleLogout = () => {
+    logout();
+    navigate('/session');
+  };
 
   
   const { order, addToOrder, changeQty, addNoteToItem, total, clearOrder } = useOrderManagement();
@@ -98,18 +109,28 @@ useEffect(() => {
     if (lastMessage.type === 'ORDER_STATUS_CHANGED' && lastMessage.order) {
       console.log('🔄 Order status changed, updating local state...');
       
+      const updatedStatus = lastMessage.order.status;
+      const orderId = lastMessage.order.id;
+      
       // Actualizar el estado local directamente sin hacer HTTP request
       setActiveOrders(prevOrders => 
         prevOrders.map(order => {
-          if (order.fullId === lastMessage.order.id) {
-            // Mantener la estructura de ActiveOrder
-            return {
+          if (order.fullId === orderId) {
+            const updatedOrder = {
               ...order,
-              status: lastMessage.order.status,
-              // Actualizar otros campos si es necesario
+              status: updatedStatus,
               customerName: lastMessage.order.customerName,
               table: lastMessage.order.table,
             };
+            
+            // Si la orden cambió a "ready" y no está en la lista de pospuestas, mostrar notificación
+            if (updatedStatus === 'ready' && !snoozedOrders.has(orderId)) {
+              console.log('🔔 Orden lista detectada, mostrando notificación...');
+              setReadyOrder(updatedOrder);
+              setIsNotificationOpen(true);
+            }
+            
+            return updatedOrder;
           }
           return order;
         })
@@ -121,7 +142,7 @@ useEffect(() => {
       refetchOrders();
     }
   }
-}, [lastMessage, setActiveOrders, refetchOrders]);
+}, [lastMessage, setActiveOrders, refetchOrders, snoozedOrders]);
 
   const handleSend = async (table: string, clientName: string) => {
     if (order.items.length === 0) return;
@@ -177,6 +198,59 @@ useEffect(() => {
     setTimeout(() => setViewingOrder(null), 200);
   };
 
+  const handleMarkAsDelivered = async (orderId: string) => {
+    try {
+      console.log('📦 Marcando orden como entregada:', orderId);
+      const response = await updateOrderStatus(orderId, 'completed');
+      
+      if (response.success) {
+        console.log('✅ Orden marcada como entregada exitosamente');
+        setIsNotificationOpen(false);
+        setReadyOrder(null);
+        // Actualizar estado local
+        setActiveOrders(prev => 
+          prev.map(order => 
+            order.fullId === orderId 
+              ? { ...order, status: 'completed' } 
+              : order
+          )
+        );
+      } else {
+        console.error('❌ Error al marcar orden como entregada:', response.error);
+      }
+    } catch (error) {
+      console.error('❌ Error al marcar orden como entregada:', error);
+    }
+  };
+
+  const handleSnoozeNotification = () => {
+    if (readyOrder) {
+      console.log('⏰ Posponiendo notificación por 30 segundos para orden:', readyOrder.fullId);
+      setSnoozedOrders(prev => new Set(prev).add(readyOrder.fullId));
+      setIsNotificationOpen(false);
+      
+      // Remover de la lista de pospuestas después de 30 segundos
+      setTimeout(() => {
+        console.log('🔔 Reactivando notificación para orden:', readyOrder.fullId);
+        setSnoozedOrders(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(readyOrder.fullId);
+          return newSet;
+        });
+        
+        // Verificar si la orden sigue en estado "ready" y mostrar notificación de nuevo
+        setActiveOrders(prevOrders => {
+          const order = prevOrders.find(o => o.fullId === readyOrder.fullId);
+          if (order && order.status === 'ready') {
+            setReadyOrder(order);
+            setIsNotificationOpen(true);
+          }
+          return prevOrders;
+        });
+      }, 30000); // 30 segundos
+    }
+  };
+
   const handleSaveOrder = async (
     orderId: string,
     updates: {
@@ -210,7 +284,14 @@ useEffect(() => {
   if (!token) return <Navigate to="/session" replace />;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 flex-col">
+      {/* Header */}
+      <WaiterHeader 
+        userEmail={user?.email}
+        onLogout={handleLogout}
+      />
+      
+      <div className="flex flex-1 overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Active Orders Section */}
@@ -320,6 +401,16 @@ useEffect(() => {
         open={isViewDialogOpen}
         onClose={handleCloseViewDialog}
       />
+
+      {/* Order Ready Notification */}
+      <OrderReadyNotification
+        order={readyOrder}
+        open={isNotificationOpen}
+        onMarkAsDelivered={handleMarkAsDelivered}
+        onSnooze={handleSnoozeNotification}
+        onClose={() => setIsNotificationOpen(false)}
+      />
+      </div>
     </div>
     
   );
