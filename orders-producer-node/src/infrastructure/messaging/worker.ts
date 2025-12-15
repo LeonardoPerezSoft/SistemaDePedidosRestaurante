@@ -2,6 +2,7 @@
 import { notifyClients } from "../websocket/ws-server";
 import { OrderMessage } from "../../domain/models/order";
 import { createKitchenOrderFromMessage } from "../../application/factories/order.factory";
+import { ProductRepository } from "../database/repositories/product.repository";
 import { getChannel, sendToDLQ } from "./amqp.connection";
 import {
   addKitchenOrder,
@@ -41,6 +42,20 @@ export async function startWorker() {
             const updatedOrder = createKitchenOrderFromMessage(pedido);
             // Preserve the current status to avoid overwriting kitchen progress
             updatedOrder.status = existingOrder.status;
+            // Enrich items with preparation time seconds from products collection
+            try {
+              const prodRepo = new ProductRepository();
+              updatedOrder.items = await Promise.all(
+                (updatedOrder.items || []).map(async (it) => {
+                  const product = await prodRepo.getByName(it.productName);
+                  return product && product.preparationTime
+                    ? { ...it, preparationTimeSeconds: product.preparationTime * 60 }
+                    : it;
+                })
+              );
+            } catch (e) {
+              console.error("⚠️ No se pudieron adjuntar tiempos de preparación:", e);
+            }
             
             // Remove old and create new (since there's no update method)
             await repo.remove(pedido.id);
@@ -53,10 +68,26 @@ export async function startWorker() {
             // Create new order
             console.log(`🆕 Nuevo pedido: ${pedido.id}`);
             const kitchenOrder = createKitchenOrderFromMessage(pedido);
+            // Enrich items with preparation time seconds from products collection
+            try {
+              const prodRepo = new ProductRepository();
+              kitchenOrder.items = await Promise.all(
+                (kitchenOrder.items || []).map(async (it) => {
+                  const product = await prodRepo.getByName(it.productName);
+                  console.log(`🔍 Buscando producto "${it.productName}":`, product ? `✅ Encontrado (prep: ${product.preparationTime}min)` : `❌ No encontrado`);
+                  return product && product.preparationTime
+                    ? { ...it, preparationTimeSeconds: product.preparationTime * 60 }
+                    : it;
+                })
+              );
+              console.log(`📦 Items enriquecidos:`, JSON.stringify(kitchenOrder.items, null, 2));
+            } catch (e) {
+              console.error("⚠️ No se pudieron adjuntar tiempos de preparación:", e);
+            }
             await addKitchenOrder(kitchenOrder);
 
             // Notify clients about new order
-            notifyClients({ type: "ORDER_NEW", order: pedido });
+            notifyClients({ type: "ORDER_NEW", order: kitchenOrder });
             console.log(`✅ Pedido ${pedido.id} agregado a cocina con estado: pending`);
           }
 
