@@ -14,36 +14,31 @@ substitutions:
 steps:
   # Build and push admin-service
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'admin-service'
-    args: [ 'build', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/admin-service:$SHORT_SHA', '.' ]
+    args: [ 'build', '-f', 'admin-service/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/admin-service:$SHORT_SHA', 'admin-service' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/admin-service:$SHORT_SHA' ]
 
   # Build and push api-gateway
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'api-gateway'
-    args: [ 'build', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/api-gateway:$SHORT_SHA', '.' ]
+    args: [ 'build', '-f', 'api-gateway/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/api-gateway:$SHORT_SHA', 'api-gateway' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/api-gateway:$SHORT_SHA' ]
 
   # Build and push orders-producer-frontend
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'orders-producer-frontend'
-    args: [ 'build', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA', '.' ]
+    args: [ 'build', '-f', 'orders-producer-frontend/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA', 'orders-producer-frontend' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA' ]
 
   # Build and push orders-producer-node
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'orders-producer-node'
-    args: [ 'build', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-node:$SHORT_SHA', '.' ]
+    args: [ 'build', '-f', 'orders-producer-node/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-node:$SHORT_SHA', 'orders-producer-node' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-node:$SHORT_SHA' ]
 
   # Build and push orders-producer-python
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'orders-producer-python'
-    args: [ 'build', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-python:$SHORT_SHA', '.' ]
+    args: [ 'build', '-f', 'orders-producer-python/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-python:$SHORT_SHA', 'orders-producer-python' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-python:$SHORT_SHA' ]
 
