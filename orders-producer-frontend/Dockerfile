@@ -1,18 +1,14 @@
-# orders-producer-frontend/Dockerfile
-FROM node:22-alpine
-
+# Build stage
+FROM node:22-alpine as build
 WORKDIR /app
-
 COPY package*.json ./
-
-RUN npm install
-
-# Copiamos todo (src, public, etc.)
+RUN npm ci
 COPY . .
+RUN npm run build
 
+# Nginx stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 8080
-
-# Usa el puerto de la variable de entorno PORT o 8080 por defecto
-ENV PORT=8080
-
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "${PORT}"]
+CMD ["nginx", "-g", "daemon off;"]
