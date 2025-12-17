@@ -40,10 +40,10 @@ Una vez que se obtuvieron las historias de usuario por medio de IRIS, selecciona
 ## Refinamiento con GEMS
 Se realizó la creación de una gema con una configuración que permita el refinamiento de las HUs dadas por ATLAS y SKAI bajo el principio INVEST. Generando así lo que es un REFINED_BACKLOG.md y en contraste observamos el antes y después del refinamiento.
 
-- Antes
-![antes_us_10]()
+Antes
+![antes_us_10](HU-Antes-Después/Antes.PNG)
 
-- Después
-![despues_us_10]()
+Después
+![despues_us_10](HU-Antes-Después/Después.PNG)
 
 # Resultado final
