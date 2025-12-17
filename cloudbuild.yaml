@@ -29,7 +29,14 @@ steps:
 
   # Build and push orders-producer-frontend
   - name: 'gcr.io/cloud-builders/docker'
-    args: [ 'build', '-f', 'orders-producer-frontend/Dockerfile', '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA', 'orders-producer-frontend' ]
+    args: [ 
+      'build', 
+      '-f', 'orders-producer-frontend/Dockerfile', 
+      '--build-arg', 'VITE_API_GATEWAY_URL=https://api-gateway-27263349264.northamerica-south1.run.app',
+      '--build-arg', 'VITE_NODE_MS_URL=https://orders-producer-node-27263349264.northamerica-south1.run.app',
+      '-t', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA', 
+      'orders-producer-frontend' 
+    ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'push', '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/orders-producer-frontend:$SHORT_SHA' ]
 
@@ -47,6 +54,7 @@ steps:
 
 
   # Deploy admin-service to Cloud Run
+  # Deploy admin-service to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
@@ -57,6 +65,8 @@ steps:
       - '--region=${_DEPLOY_REGION}'
       - '--platform=${_PLATFORM}'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'MONGO_URI=mongodb+srv://andresburgos_db_user:hZvUXR6rIFu6kJAH@cluster0.ww4l0e2.mongodb.net/orders_db?retryWrites=true&w=majority&tls=true,MONGO_DB=orders_db,JWT_SECRET=change-me-in-prod'
 
   # Deploy api-gateway to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -69,6 +79,8 @@ steps:
       - '--region=${_DEPLOY_REGION}'
       - '--platform=${_PLATFORM}'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'ADMIN_MS_URL=https://admin-service-27263349264.northamerica-south1.run.app'
 
   # Deploy orders-producer-frontend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -93,6 +105,8 @@ steps:
       - '--region=${_DEPLOY_REGION}'
       - '--platform=${_PLATFORM}'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'CORS_ORIGIN=https://orders-producer-frontend-27263349264.northamerica-south1.run.app,USE_MONGO=true,MONGO_URI=mongodb+srv://andresburgos_db_user:hZvUXR6rIFu6kJAH@cluster0.ww4l0e2.mongodb.net/orders_db?retryWrites=true&w=majority&tls=true,MONGO_DB=orders_db,AMQP_CONNECTION_TYPE=cloud,AMQP_CLOUD_PROTOCOL=amqps,AMQP_CLOUD_HOST=porpoise.rmq.cloudamqp.com,AMQP_CLOUD_PORT=5671,AMQP_CLOUD_USER=ukdduroz,AMQP_CLOUD_PASS=wv-N_dL0-TFQ-sGILlhkhmXCh2R1wVmL,AMQP_CLOUD_VHOST=ukdduroz,ORDERS_QUEUE=orders.new'
 
   # Deploy orders-producer-python to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -105,6 +119,8 @@ steps:
       - '--region=${_DEPLOY_REGION}'
       - '--platform=${_PLATFORM}'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'CORS_ORIGIN=https://orders-producer-frontend-27263349264.northamerica-south1.run.app'
 
 images:
   - '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/admin-service:$SHORT_SHA'

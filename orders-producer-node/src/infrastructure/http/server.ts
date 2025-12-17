@@ -27,7 +27,7 @@ export async function startServer() {
     // 4. Crear servidor HTTP
     const app = express();
     app.use(express.json());
-    app.use(cors({ origin: "http://localhost:5173" }));
+    app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
 
 
     // Rutas
