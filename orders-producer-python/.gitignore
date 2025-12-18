@@ -48,6 +48,11 @@ poetry.lock
 dmypy.json
 
 # Pyre type checker
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 .pyre/
 
 # Pytest
